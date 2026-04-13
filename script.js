@@ -1,130 +1,176 @@
-const GEOJSON_URL = 'https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson';
+const GEOJSON_URL =
+  'https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson';
 
 fetch(GEOJSON_URL)
-    .then(res => res.json())
-    .then(countries => {
+  .then(res => res.json())
+  .then(countries => {
 
-        let lastClicked = null;
-        let isAnimating = false;
-        let tradePartners = {};
+    let lastClicked = null;
+    let isAnimating = false;
+    let tradePartners = {};
 
-        const world = Globe()
-            (document.getElementById('globe-container'))
-            .showAtmosphere(false)
-            .polygonsData(countries.features)
-            .polygonAltitude(0.01)
+    const countryNameEl = document.getElementById("country-name");
+    const partnerListEl = document.getElementById("partner-list");
 
-            // 🎨 Colors
-            .polygonCapColor(d => {
-                const iso = d.properties.ISO_A3;
+    const world = Globe()(document.getElementById('globe-container'))
+      .showAtmosphere(false)
+      .polygonsData(countries.features)
+      .polygonAltitude(0.01)
 
-                if (iso === lastClicked?.properties?.ISO_A3) {
-                    return '#4d79ff'; // clicked country
-                }
+      // 🎨 Color logic
+      .polygonCapColor(d => {
+        const iso = d.properties.ISO_A3;
 
-                if (tradePartners[iso]) {
-                    return '#ff4d4d'; // partners
-                }
+        // 🟢 selected country
+        if (iso === lastClicked?.properties?.ISO_A3) {
+          return '#00cc66';
+        }
 
-                return '#ffffff';
-            })
+        // 🔴 trade partners (with better scaling)
+        if (tradePartners[iso] !== undefined) {
+          const p = tradePartners[iso];
 
-            .polygonSideColor(() => '#cccccc')
-            .polygonStrokeColor(() => '#000')
-            .polygonLabel(({ properties: d }) => `<div>${d.ADMIN}</div>`)
+          // sqrt scaling + minimum visibility
+          const intensity = Math.max(0.08, Math.min(1, Math.sqrt(p / 20)));
 
-            .onPolygonHover(hoverD => {
-                world.polygonAltitude(d => d === hoverD ? 0.05 : 0.01);
-            })
+          const red = 255;
+          const gb = Math.floor(255 * (1 - intensity));
 
-            .onPolygonClick((polygon) => {
-                if (isAnimating) return;
+          return `rgb(${red}, ${gb}, ${gb})`;
+        }
 
-                const isSame = lastClicked === polygon;
-                const iso = polygon.properties.ISO_A3;
+        // ⚪ default
+        return '#e5e7eb';
+      })
 
-                console.log("Clicked:", iso);
+      .polygonSideColor(() => '#888')
+      .polygonStrokeColor(() => '#111')
 
-                // 🔥 Fetch partners
-                fetch(`http://localhost:3000/trade-partners?country=${iso}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!Array.isArray(data)) {
-                            console.warn("Invalid data:", data);
-                            tradePartners = {};
-                            world.polygonsData(countries.features);
-                            return;
-                        }
+      // 🏷️ Tooltip
+      .polygonLabel(({ properties: d }) => {
+        const iso = d.ISO_A3;
 
-                        tradePartners = {};
+        if (tradePartners[iso] !== undefined) {
+          return `
+            <div>
+              <b>${d.ADMIN}</b><br/>
+              ${tradePartners[iso].toFixed(2)}% of exports
+            </div>
+          `;
+        }
 
-                        data.forEach(p => {
-                            tradePartners[p.country] = p.value;
-                        });
+        return `<div>${d.ADMIN}</div>`;
+      })
 
-                        console.log("Partners:", tradePartners);
+      // hover effect
+      .onPolygonHover(hoverD => {
+        world.polygonAltitude(d =>
+          d === hoverD ? 0.05 :
+          d === lastClicked ? 0.08 :
+          0.01
+        );
+      })
 
-                        world.polygonsData(countries.features);
-                    })
-                    .catch(err => console.error(err));
+      // 🖱️ click
+      .onPolygonClick((polygon) => {
+        if (isAnimating) return;
 
-                const { properties: d, geometry } = polygon;
+        const isSame = lastClicked === polygon;
+        const iso = polygon.properties.ISO_A3;
 
-                let lat, lng;
+        // 📡 fetch trade data
+        fetch(`http://localhost:3000/trade-partners?country=${iso}`)
+          .then(res => res.json())
+          .then(data => {
 
-                if (d.LABEL_Y && d.LABEL_X) {
-                    lat = d.LABEL_Y;
-                    lng = d.LABEL_X;
-                } else {
-                    const coords = geometry.type === 'Polygon'
-                        ? geometry.coordinates[0]
-                        : geometry.coordinates[0][0];
+            tradePartners = {};
 
-                    const lats = coords.map(c => c[1]);
-                    const lngs = coords.map(c => c[0]);
+            data.forEach(p => {
+              if (p.value > 0.05) {
+                tradePartners[p.country] = p.value;
+              }
+            });
 
-                    lat = (Math.min(...lats) + Math.max(...lats)) / 2;
-                    lng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-                }
+            // 📊 update side panel
+            countryNameEl.textContent = polygon.properties.ADMIN;
+            partnerListEl.innerHTML = "";
 
-                const controls = world.controls();
-                controls.enabled = false;
-                isAnimating = true;
+            data.slice(0, 10).forEach(p => {
+              const li = document.createElement("li");
+              li.textContent = `${p.country} — ${p.value.toFixed(2)}%`;
+              partnerListEl.appendChild(li);
+            });
 
-                if (isSame) {
-                    world.pointOfView({ lat, lng, altitude: 1.0 }, 500);
-                    setTimeout(() => {
-                        controls.enabled = true;
-                        isAnimating = false;
-                    }, 500);
-                    return;
-                }
+            world.polygonsData(countries.features);
+          })
+          .catch(err => console.error(err));
 
-                lastClicked = polygon;
+        const { properties: d, geometry } = polygon;
 
-                world.pointOfView({ lat, lng, altitude: 1.5 }, 1000);
+        let lat, lng;
 
-                setTimeout(() => {
-                    controls.enabled = true;
-                    isAnimating = false;
-                }, 1000);
-            })
-            .polygonsTransitionDuration(300);
+        if (d.LABEL_Y && d.LABEL_X) {
+          lat = d.LABEL_Y;
+          lng = d.LABEL_X;
+        } else {
+          const coords = geometry.type === 'Polygon'
+            ? geometry.coordinates[0]
+            : geometry.coordinates[0][0];
 
-        // Globe style
-        world.globeMaterial().color.set('#2e86fa');
-        world.pointOfView({ altitude: 2.5 });
+          const lats = coords.map(c => c[1]);
+          const lngs = coords.map(c => c[0]);
+
+          lat = (Math.min(...lats) + Math.max(...lats)) / 2;
+          lng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+        }
 
         const controls = world.controls();
-        controls.minDistance = 120;
-        controls.maxDistance = 400;
-        controls.enableDamping = true;
+        controls.enabled = false;
+        isAnimating = true;
 
-        // Reset
-        world.onGlobeClick(() => {
-            tradePartners = {};
-            lastClicked = null;
-            world.polygonsData(countries.features);
-            world.pointOfView({ altitude: 2.5 }, 1000);
-        });
+        if (isSame) {
+          world.pointOfView({ lat, lng, altitude: 1.0 }, 500);
+          setTimeout(() => {
+            controls.enabled = true;
+            isAnimating = false;
+          }, 500);
+          return;
+        }
+
+        lastClicked = polygon;
+
+        world.pointOfView({ lat, lng, altitude: 1.5 }, 1000);
+
+        setTimeout(() => {
+          controls.enabled = true;
+          isAnimating = false;
+        }, 1000);
+      })
+
+      .polygonsTransitionDuration(600);
+
+    // 🌍 globe style
+    world.globeMaterial().color.set('#0b1e2d');
+    world.globeMaterial().emissive.set('#112244');
+    world.globeMaterial().emissiveIntensity = 0.2;
+
+    world.pointOfView({ altitude: 2.5 });
+
+    const controls = world.controls();
+    controls.minDistance = 120;
+    controls.maxDistance = 400;
+    controls.enableDamping = true;
+
+    // 🔄 reset
+    world.onGlobeClick(() => {
+      tradePartners = {};
+      lastClicked = null;
+
+      document.getElementById("country-name").textContent = "Select a country";
+      document.getElementById("partner-list").innerHTML = "";
+
+      world.polygonsData(countries.features);
+      world.pointOfView({ altitude: 2.5 }, 1000);
     });
+
+  });

@@ -1,11 +1,81 @@
 body {
     margin: 0;
-    padding: 0;
     overflow: hidden;
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
+    background: #0b1e2d;
+    color: white;
 }
 
+/* 🌍 Globe */
 #globe-container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
+}
+
+/* 🧭 Header */
+#header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+}
+
+#header h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+#header p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* 📊 Info Panel */
+#info-panel {
+    position: absolute;
+    right: 20px;
+    top: 80px;
+    width: 220px;
+    background: rgba(0,0,0,0.6);
+    padding: 15px;
+    border-radius: 10px;
+    z-index: 10;
+}
+
+#info-panel h2 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+#partner-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#partner-list li {
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+/* 🎨 Legend */
+#legend {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+}
+
+.gradient {
+    width: 120px;
+    height: 10px;
+    background: linear-gradient(to right, #fff, red);
+    border-radius: 5px;
 }

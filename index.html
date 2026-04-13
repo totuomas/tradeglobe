@@ -3,15 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Globe</title>
+    <title>Trade Globe</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/globe.gl"></script>
 </head>
 <body>
 
-    <div id="globe-container"></div>
+  <!-- 🌍 Title -->
+  <div id="header">
+    <h1>Global Trade Explorer</h1>
+    <p>Click a country to see its export partners</p>
+  </div>
 
-    <script src="script.js"></script>
+  <!-- 🌐 Globe -->
+  <div id="globe-container"></div>
+
+  <!-- 📊 Info Panel -->
+  <div id="info-panel">
+    <h2 id="country-name">Select a country</h2>
+    <ul id="partner-list"></ul>
+  </div>
+
+  <!-- 🎨 Legend -->
+  <div id="legend">
+    <span>0%</span>
+    <div class="gradient"></div>
+    <span>20%+</span>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

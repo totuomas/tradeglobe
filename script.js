@@ -213,7 +213,7 @@ fetch(GEOJSON_URL)
         const controller = new AbortController();
         currentRequest = controller;
 
-        fetch(`http://localhost:3000/trade-partners?country=${iso}`, {
+        fetch(`https://backend-mqlt.onrender.com/trade-partners?country=${iso}`, {
           signal: controller.signal
         })
           .then(res => {

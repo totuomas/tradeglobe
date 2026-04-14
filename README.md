@@ -1,6 +1,6 @@
 ## Trade Globe
 
-A lightweight, modern personal website with an easy-to-navigate design
+[Website](https://totuomas.github.io/tradeglobe/) to visualize the international trade and countries main trade partners
 
 ## ✨ Features
 

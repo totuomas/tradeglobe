@@ -47,7 +47,7 @@ export function initGlobe({
         return "#00cc66";
       }
 
-      const iso = d.properties.ISO_A3;
+      const iso = d.properties.ISO_A3 !== "-99" ? d.properties.ISO_A3 : d.properties.ADM0_A3;
 
       // trade partners heat
       if (state.tradePartners[iso] !== undefined) {

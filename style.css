@@ -104,3 +104,13 @@ body {
   background: #00cc66;
   color: black;
 }
+
+.sectors-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* pushes toggle to the right */
+}
+
+.sectors-header h3 {
+  margin: 0;
+}

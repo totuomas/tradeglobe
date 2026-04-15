@@ -5,17 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trade Globe</title>
 
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
-
   <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/globe.gl"></script>
 </head>
 <body>
 
-  <!-- 🌍 Title -->
+  <!-- 🌍 Header -->
   <div id="header">
     <h1>Global Trade Explorer</h1>
     <p>Click a country to see its export partners</p>
+  </div>
+
+  <!-- 🎛️ Controls Panel -->
+  <div id="controls-panel">
+    <h3>Controls</h3>
+
+    <div class="control-item">
+      <button id="sectors-btn">
+        Show sector breakdown
+      </button>
+    </div>
   </div>
 
   <!-- 🌐 Globe -->
@@ -23,26 +32,25 @@
 
   <!-- 📊 Info Panel -->
   <div id="info-panel">
-
     <h2 id="country-name">Select a country</h2>
 
-    <!-- 🌍 PARTNERS CARD -->
     <div id="partners-card">
       <h3>Top Trade Partners</h3>
       <div id="partners-chart"></div>
     </div>
 
-    <!-- 🔘 Button -->
-    <button id="sectors-btn" style="margin-top:10px; display:none;">
-      Show sector breakdown
-    </button>
+    <!-- ALWAYS VISIBLE -->
+    <div id="sectors-card" style="margin-top:15px;">
+      <div class="sectors-header">
+        <h3>Sector Breakdown</h3>
+        <label class="switch">
+          <input type="checkbox" id="sectors-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
 
-    <!-- 📊 SECTORS CARD -->
-    <div id="sectors-card" style="margin-top:15px; display:none;">
-      <h3>Sector Breakdown</h3>
       <div id="sectors-chart"></div>
     </div>
-
   </div>
 
   <!-- 🎨 Legend -->

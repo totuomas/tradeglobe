@@ -1,28 +1,20 @@
 import { state } from "./src/state.js";
 import { checkApiStatus, fetchTradePartners, fetchTradeSectors } from "./src/api.js";
-import {
-  renderPartnersChart,
-  renderSectorChart,
-  createStatusBar,
-  setStatus,
-  showLoading,
-  showError
-} from "./src/ui.js";
+import { renderPartnersChart, renderSectorChart, createStatusBar, setStatus, showLoading, showError } from "./src/ui.js";
 import { initGlobe, processFeatures } from "./src/globe.js";
 
-const GEOJSON_URL =
-  "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson";
+const GEOJSON_URL = 
+"https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson";
 
 // ===== DOM =====
 const infoPanel = document.getElementById("info-panel");
 const countryNameEl = document.getElementById("country-name");
 const partnersChart = document.getElementById("partners-chart");
 const sectorsChart = document.getElementById("sectors-chart");
-const sectorsCard = document.getElementById("sectors-card");
 
 const globeContainer = document.getElementById("globe-container");
 
-const sectorsBtn = document.getElementById("sectors-btn");
+const sectorsBtn = document.getElementById("sectors-toggle");
 const exportsBtn = document.getElementById("exports-btn");
 const importsBtn = document.getElementById("imports-btn");
 
@@ -57,7 +49,6 @@ function setMode(mode) {
       ? "Click a country to see its export partners"
       : "Click a country to see its import partners";
 
-  // 🔁 re-fetch if country already selected
   if (state.lastClicked) {
     loadPartners(state.lastClicked);
   }
@@ -66,14 +57,13 @@ function setMode(mode) {
 exportsBtn.onclick = () => setMode("exports");
 importsBtn.onclick = () => setMode("imports");
 
-// ===== LOAD PARTNERS (reusable) =====
+// ===== LOAD PARTNERS =====
 async function loadPartners(polygon) {
-  const iso = polygon.properties.ISO_A3;
+  const iso = polygon.properties.ISO_A3 !== "-99"
+    ? polygon.properties.ISO_A3
+    : polygon.properties.ADM0_A3;
 
   showLoading(partnersChart);
-  sectorsCard.style.display = "none";
-  state.showingSectors = false;
-  sectorsBtn.textContent = "Show sector breakdown";
 
   if (state.currentRequest) state.currentRequest.abort();
 
@@ -87,7 +77,6 @@ async function loadPartners(polygon) {
       controller.signal
     );
 
-    // store clean data
     state.partnerData = data;
 
     // map for globe coloring
@@ -98,7 +87,7 @@ async function loadPartners(polygon) {
       }
     });
 
-    renderPartnersChart(partnersChart, data);
+    renderPartnersChart(partnersChart, data, state.isoToName);
 
     if (state.world) {
       state.world.polygonCapColor(state.world.polygonCapColor());
@@ -112,46 +101,32 @@ async function loadPartners(polygon) {
 
 // ===== SECTOR BUTTON =====
 sectorsBtn.onclick = async () => {
-  if (!state.lastClicked) return;
+  // 🔁 toggle state
+  state.showingSectors = !state.showingSectors;
 
-  const iso = state.lastClicked.properties.ISO_A3;
+  // update button text
+  sectorsBtn.textContent = state.showingSectors
+    ? "Hide sector breakdown"
+    : "Show sector breakdown";
 
-  // 🔁 toggle OFF (hide sectors)
-  if (state.showingSectors) {
-    sectorsCard.style.display = "none";
-    state.showingSectors = false;
-    sectorsBtn.textContent = "Show sector breakdown";
+  // ❌ if turning OFF → reset to empty bars
+  if (!state.showingSectors) {
+    renderSectorChart(sectorsChart, []);
     return;
   }
 
-  showLoading(sectorsChart);
+  // ✅ if turning ON and country selected → fetch
+  if (state.lastClicked) {
+    const iso = state.lastClicked.properties.ISO_A3;
 
-  if (state.currentRequest) state.currentRequest.abort();
+    showLoading(sectorsChart);
 
-  const controller = new AbortController();
-  state.currentRequest = controller;
-
-  try {
-    const data = await fetchTradeSectors(
-      iso,
-      state.tradeMode,
-      controller.signal
-    );
-
-    state.sectors = data;
-    state.showingSectors = true;
-
-    // show card
-    sectorsCard.style.display = "block";
-
-    // render chart
-    renderSectorChart(sectorsChart, data);
-
-    sectorsBtn.textContent = "Hide sector breakdown";
-
-  } catch (err) {
-    if (err.name === "AbortError") return;
-    showError(sectorsChart);
+    try {
+      const data = await fetchTradeSectors(iso, state.tradeMode);
+      renderSectorChart(sectorsChart, data);
+    } catch {
+      showError(sectorsChart);
+    }
   }
 };
 
@@ -161,6 +136,21 @@ fetch(GEOJSON_URL)
   .then(countries => {
 
     const features = processFeatures(countries);
+
+    // 🌍 ISO → NAME MAP (FIXED)
+    const isoToName = {};
+    features.forEach(f => {
+      const iso = f.properties.ISO_A3 !== "-99"
+        ? f.properties.ISO_A3
+        : f.properties.ADM0_A3;
+
+      isoToName[iso] = f.properties.ADMIN;
+    });
+    state.isoToName = isoToName;
+
+    // ✅ INITIAL EMPTY CHARTS (0% bars)
+    renderPartnersChart(partnersChart, [], isoToName);
+    renderSectorChart(sectorsChart, []);
 
     const world = initGlobe({
       container: globeContainer,
@@ -180,10 +170,24 @@ fetch(GEOJSON_URL)
 
         countryNameEl.textContent = polygon.properties.ADMIN;
 
-        // show button
-        sectorsBtn.style.display = "block";
-
         await loadPartners(polygon);
+
+        // ✅ if toggle is ON → also load sectors
+        if (state.showingSectors) {
+          const iso = polygon.properties.ISO_A3;
+
+          showLoading(sectorsChart);
+
+          try {
+            const data = await fetchTradeSectors(iso, state.tradeMode);
+            renderSectorChart(sectorsChart, data);
+          } catch {
+            showError(sectorsChart);
+          }
+        } else {
+          // keep empty bars if OFF
+          renderSectorChart(sectorsChart, []);
+        }
       },
 
       // ===== RESET =====
@@ -191,19 +195,21 @@ fetch(GEOJSON_URL)
         state.tradePartners = {};
         state.lastClicked = null;
         state.sectors = null;
+
+        // ✅ reset toggle state
         state.showingSectors = false;
+        sectorsBtn.textContent = "Show sector breakdown";
 
         countryNameEl.textContent = "Select a country";
 
-        partnersChart.innerHTML = "";
-        sectorsChart.innerHTML = "";
-        sectorsCard.style.display = "none";
-        sectorsBtn.style.display = "none";
+        // ✅ RESET TO ZERO BARS
+        renderPartnersChart(partnersChart, [], state.isoToName);
+        renderSectorChart(sectorsChart, []);
 
         world.polygonCapColor(world.polygonCapColor());
         world.pointOfView({ altitude: 2.5 }, 1000);
       }
-    });
+    })
 
     state.world = world;
 

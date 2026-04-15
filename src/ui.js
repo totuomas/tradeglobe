@@ -77,31 +77,58 @@ function createBarRow(labelText, value, color = "#00cc66") {
 }
 
 // ===== PARTNERS CHART =====
-export function renderPartnersChart(container, data) {
+export function renderPartnersChart(container, data, isoToName = {}) {
   container.innerHTML = "";
 
+  // ✅ SHOW EMPTY (0%) BARS INSTEAD OF "NO DATA"
   if (!data || data.length === 0) {
-    container.innerHTML = "<div style='opacity:0.6'>No data</div>";
+    for (let i = 0; i < 10; i++) {
+      const row = createBarRow("—", 0, "#4dabf7");
+      container.appendChild(row);
+    }
     return;
   }
 
   data.slice(0, 10).forEach(p => {
-    const row = createBarRow(p.country, p.value, "#4dabf7");
+    const name = isoToName[p.country] || p.country;
+    const row = createBarRow(name, p.value, "#4dabf7");
     container.appendChild(row);
   });
 }
 
-// ===== SECTORS CHART =====
 export function renderSectorChart(container, data) {
   container.innerHTML = "";
 
-  if (!data || data.length === 0) {
-    container.innerHTML = "<div style='opacity:0.6'>No data</div>";
-    return;
+  const sectorOrder = [
+    "manufacturing",
+    "chemicals",
+    "raw_materials",
+    "agriculture",
+    "other"
+  ];
+
+  const labels = {
+    manufacturing: "Manufacturing",
+    chemicals: "Chemicals",
+    raw_materials: "Raw Materials",
+    agriculture: "Agriculture",
+    other: "Other"
+  };
+
+  // create lookup from API data
+  const dataMap = {};
+  if (data) {
+    data.forEach(s => {
+      dataMap[s.sector] = s.value;
+    });
   }
 
-  data.forEach(s => {
-    const row = createBarRow(s.sector, s.value, "#00cc66");
+  // render ALWAYS in fixed order
+  sectorOrder.forEach(sector => {
+    const value = dataMap[sector] || 0;
+    const label = labels[sector] || sector;
+
+    const row = createBarRow(label, value, "#00cc66");
     container.appendChild(row);
   });
 }

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trade Globe</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/globe.gl"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Globe</title>
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/globe.gl"></script>
 </head>
 <body>
 
@@ -21,8 +23,26 @@
 
   <!-- 📊 Info Panel -->
   <div id="info-panel">
+
     <h2 id="country-name">Select a country</h2>
-    <ul id="partner-list"></ul>
+
+    <!-- 🌍 PARTNERS CARD -->
+    <div id="partners-card">
+      <h3>Top Trade Partners</h3>
+      <div id="partners-chart"></div>
+    </div>
+
+    <!-- 🔘 Button -->
+    <button id="sectors-btn" style="margin-top:10px; display:none;">
+      Show sector breakdown
+    </button>
+
+    <!-- 📊 SECTORS CARD -->
+    <div id="sectors-card" style="margin-top:15px; display:none;">
+      <h3>Sector Breakdown</h3>
+      <div id="sectors-chart"></div>
+    </div>
+
   </div>
 
   <!-- 🎨 Legend -->
@@ -31,11 +51,13 @@
     <div class="gradient"></div>
     <span>20%+</span>
   </div>
+
+  <!-- 🔄 Mode toggle -->
   <div id="mode-toggle">
     <button id="exports-btn" class="active">Exports</button>
     <button id="imports-btn">Imports</button>
   </div>
-  
+
   <script type="module" src="script.js"></script>
 </body>
 </html>

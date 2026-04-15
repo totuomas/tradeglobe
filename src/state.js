@@ -3,6 +3,7 @@ export const state = {
   currentRequest: null,
   lastClicked: null,
   tradePartners: {},
-  prefetchCache: new Set(),
-  tradeMode: "exports"
+  tradeMode: "exports",
+  sectors: null,
+  showingSectors: false
 };

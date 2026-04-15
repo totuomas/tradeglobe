@@ -1,3 +1,4 @@
+// ===== STATUS BAR =====
 export function createStatusBar(infoPanel) {
   const container = document.createElement("div");
   container.style.display = "flex";
@@ -45,27 +46,71 @@ export function setStatus(textEl, dotEl, text, color) {
   dotEl.style.background = color;
 }
 
-export function updateList(listEl, data) {
-  listEl.innerHTML = "";
+// ===== GENERIC BAR CHART =====
+function createBarRow(labelText, value, color = "#00cc66") {
+  const row = document.createElement("div");
+  row.style.marginBottom = "8px";
+
+  const label = document.createElement("div");
+  label.textContent = `${labelText} — ${value.toFixed(1)}%`;
+  label.style.fontSize = "12px";
+  label.style.marginBottom = "2px";
+
+  const barBg = document.createElement("div");
+  barBg.style.width = "100%";
+  barBg.style.height = "10px";
+  barBg.style.background = "#333";
+  barBg.style.borderRadius = "5px";
+
+  const bar = document.createElement("div");
+  bar.style.width = `${value}%`;
+  bar.style.height = "100%";
+  bar.style.background = color;
+  bar.style.borderRadius = "5px";
+
+  barBg.appendChild(bar);
+
+  row.appendChild(label);
+  row.appendChild(barBg);
+
+  return row;
+}
+
+// ===== PARTNERS CHART =====
+export function renderPartnersChart(container, data) {
+  container.innerHTML = "";
 
   if (!data || data.length === 0) {
-    const li = document.createElement("li");
-    li.textContent = "No data available";
-    listEl.appendChild(li);
+    container.innerHTML = "<div style='opacity:0.6'>No data</div>";
     return;
   }
 
   data.slice(0, 10).forEach(p => {
-    const li = document.createElement("li");
-    li.textContent = `${p.country} — ${p.value.toFixed(2)}%`;
-    listEl.appendChild(li);
+    const row = createBarRow(p.country, p.value, "#4dabf7");
+    container.appendChild(row);
   });
 }
 
-export function showLoading(listEl) {
-  listEl.innerHTML = "<li style='opacity:0.6'>Loading...</li>";
+// ===== SECTORS CHART =====
+export function renderSectorChart(container, data) {
+  container.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    container.innerHTML = "<div style='opacity:0.6'>No data</div>";
+    return;
+  }
+
+  data.forEach(s => {
+    const row = createBarRow(s.sector, s.value, "#00cc66");
+    container.appendChild(row);
+  });
 }
 
-export function showError(listEl, message = "⚠️ Data unavailable") {
-  listEl.innerHTML = `<li style='color:#ff6b6b'>${message}</li>`;
+// ===== HELPERS =====
+export function showLoading(container) {
+  container.innerHTML = "<div style='opacity:0.6'>Loading...</div>";
+}
+
+export function showError(container, message = "⚠️ Data unavailable") {
+  container.innerHTML = `<div style='color:#ff6b6b'>${message}</div>`;
 }

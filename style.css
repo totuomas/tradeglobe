@@ -4,7 +4,6 @@
 html, body {
   margin: 0;
   overflow: hidden;
-  background: radial-gradient(circle at 30% 30%, #0b1220, #020617);
   font-family: "Inter", system-ui, sans-serif;
   color: white;
 }

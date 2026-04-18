@@ -1,5 +1,8 @@
+import { themes } from "./theme.js";
+
 export const state = {
   selectedISO: null,
   partners: new Map(),
-  mode: "export"
+  mode: "export",
+  theme: themes.dark
 };

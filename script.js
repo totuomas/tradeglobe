@@ -1,6 +1,7 @@
 import { createGlobe } from "./src/globe.js";
-import { fetchTradePartners } from "./src/api.js";
+import { fetchTradePartners, checkApiStatus } from "./src/api.js";
 import { state } from "./src/state.js";
+import { updateApiStatus } from "./src/ui.js";
 
 const GEOJSON_URL =
   "https://raw.githubusercontent.com/samsol38/3dglobesearch/refs/heads/main/public/data/countries_v2.geojson";
@@ -13,6 +14,33 @@ function getISO(f) {
     ? f.properties.ISO_A3
     : f.properties.ADM0_A3;
 }
+
+/* =========================
+   API STATUS HANDLING
+========================= */
+
+async function checkAndUpdateStatus() {
+  // show checking state (optional)
+  updateApiStatus(false, true);
+
+  const online = await checkApiStatus();
+  updateApiStatus(online);
+}
+
+// run once on load
+checkAndUpdateStatus();
+
+// retry button
+const retryBtn = document.getElementById("retry-btn");
+if (retryBtn) {
+  retryBtn.addEventListener("click", () => {
+    checkAndUpdateStatus();
+  });
+}
+
+/* =========================
+   LOAD GLOBE DATA
+========================= */
 
 fetch(GEOJSON_URL)
   .then(res => res.json())
@@ -29,7 +57,7 @@ fetch(GEOJSON_URL)
         try {
           const partners = await fetchTradePartners(iso, "export");
 
-          // 🔥 key fix: support both iso and country
+          // support both iso and country keys
           partners.forEach(p => {
             const key = p.iso || p.country;
             if (key) state.partners.set(key, p.value);

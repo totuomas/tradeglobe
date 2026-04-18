@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>D3 Globe</title>
+  <title>Global Trade</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,7 +16,13 @@
 
   <!-- Canvas -->
   <canvas id="globe"></canvas>
-  
+
+  <div id="status-panel">
+    <div id="status-dot" class="status-dot"></div>
+    <span id="status-text">Checking...</span>
+    <button id="retry-btn" title="Reconnect">⟳</button>
+  </div>
+
   <!-- Tooltip -->
   <div id="tooltip"></div>
 

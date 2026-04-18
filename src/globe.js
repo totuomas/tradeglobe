@@ -52,10 +52,10 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
 
     context.save();
 
-    let offsetX = (rotation[0] * 0.5) % imgW;
+    let offsetX = rotation[0] % imgW;
     if (offsetX < 0) offsetX += imgW;
 
-    let offsetY = rotation[1] * 0.3;
+    let offsetY = rotation[1] * 0.6;
     offsetY = Math.max(-imgH / 3, Math.min(imgH / 3, offsetY));
 
     context.translate(-offsetX, -offsetY);
@@ -63,6 +63,64 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
     for (let x = -imgW; x < width + imgW; x += imgW) {
       context.drawImage(starImg, x, -imgH, imgW, height + imgH * 2);
     }
+
+    context.restore();
+  }
+
+  // 🌍 Shaded sphere
+  function drawSphere() {
+    const gradient = context.createLinearGradient(
+      0,
+      height / 2 - scale,
+      0,
+      height / 2 + scale
+    );
+
+    gradient.addColorStop(0, "#1e293b");
+    gradient.addColorStop(0.5, "#0b1e2d");
+    gradient.addColorStop(1, "#020617");
+
+    context.beginPath();
+    path({ type: "Sphere" });
+    context.fillStyle = gradient;
+    context.fill();
+  }
+
+  // ✨ NEW: atmosphere glow
+  function drawAtmosphere() {
+    const cx = width / 2;
+    const cy = height / 2;
+
+    const atmosphereRadius = scale * 1.08;
+
+    const lightOffsetX = scale * 0.25; // directional light
+
+    const gradient = context.createRadialGradient(
+      cx + lightOffsetX,
+      cy,
+      scale * 0.75,
+      cx,
+      cy,
+      atmosphereRadius
+    );
+
+    gradient.addColorStop(0, "rgba(0,150,255,0)");
+    gradient.addColorStop(0.7, "rgba(0,150,255,0.15)");
+    gradient.addColorStop(0.85, "rgba(0,180,255,0.3)");
+    gradient.addColorStop(1, "rgba(0,120,255,0.55)");
+
+    context.save();
+
+    context.beginPath();
+    context.arc(cx, cy, atmosphereRadius, 0, Math.PI * 2);
+
+    context.fillStyle = gradient;
+
+    // glow magic
+    context.globalCompositeOperation = "lighter";
+    context.filter = "blur(10px)";
+
+    context.fill();
 
     context.restore();
   }
@@ -84,20 +142,14 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
   function drawHoveredCountry(f) {
     context.save();
 
-    const centroid = d3.geoCentroid(f);
-    const [cx, cy] = projection(centroid);
-
-    context.translate(cx, cy);
-    context.scale(1.08, 1.08);
-    context.translate(-cx, -cy);
-
-    context.shadowBlur = 20;
-    context.shadowColor = "#00cc66";
+    context.shadowBlur = 25;
+    context.shadowColor = "rgba(0,255,150,0.7)";
 
     context.beginPath();
     path(f);
 
     context.fillStyle = "#00cc66";
+    context.globalAlpha = 0.95;
     context.fill();
 
     context.strokeStyle = "#000";
@@ -150,11 +202,8 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
     context.clearRect(0, 0, width, height);
 
     drawStarSky();
-
-    context.beginPath();
-    path({ type: "Sphere" });
-    context.fillStyle = "#0b1e2d";
-    context.fill();
+    drawSphere();
+    drawAtmosphere(); // ✨ added here
 
     for (let f of features) {
       if (f === hovered) continue;
@@ -162,7 +211,7 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
       context.beginPath();
       path(f);
 
-      const iso = getISO(f); // ✅ FIX
+      const iso = getISO(f);
       context.fillStyle = getColor(iso);
 
       context.fill();
@@ -229,7 +278,7 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
         canvas.style.cursor = "pointer";
       } else {
         tooltip.style.opacity = 0;
-        canvas.style.cursor = isDragging ? "grabbing" : "grab";
+        canvas.style.cursor = "default";
       }
     }
 
@@ -239,7 +288,7 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
   canvas.addEventListener("wheel", e => {
     e.preventDefault();
     scale += e.deltaY * -0.3;
-    scale = Math.max(150, Math.min(800, scale));
+    scale = Math.max(150, Math.min(600, scale));
     projection.scale(scale);
   });
 

@@ -1,6 +1,5 @@
-// state.js
-
 export const state = {
   selectedISO: null,
-  partners: new Map(), // ISO -> % trade
+  partners: new Map(),
+  mode: "export"
 };

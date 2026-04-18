@@ -4,12 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Global Trade</title>
+
+  <!-- Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <!-- Header -->
-  <div id="header">
+  <div id="header" class="glass">
     <h1>Global Globe</h1>
     <p>Drag • Scroll • Hover</p>
   </div>
@@ -17,10 +22,27 @@
   <!-- Canvas -->
   <canvas id="globe"></canvas>
 
-  <div id="status-panel">
+  <!-- Status -->
+  <div id="status-panel" class="glass">
     <div id="status-dot" class="status-dot"></div>
     <span id="status-text">Checking...</span>
     <button id="retry-btn" title="Reconnect">⟳</button>
+  </div>
+
+  <!-- Trade Panel -->
+  <div id="trade-panel" class="glass">
+    <div id="trade-header">
+      <h2 id="country-name">Select a country</h2>
+
+      <div id="mode-toggle">
+        <button data-mode="export" class="active">Exports</button>
+        <button data-mode="import">Imports</button>
+      </div>
+    </div>
+
+    <div id="trade-content">
+      <p class="placeholder">Click a country to view trade data</p>
+    </div>
   </div>
 
   <!-- Tooltip -->

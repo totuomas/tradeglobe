@@ -1,108 +1,283 @@
-export function processFeatures(countries) {
-  return countries.features.map((f, i) => {
-    f.__id = i;
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+import { state } from "./state.js";
 
-    const d = f.properties;
-    const geometry = f.geometry;
-
-    if (d.LABEL_Y && d.LABEL_X) {
-      f.__center = { lat: d.LABEL_Y, lng: d.LABEL_X };
-    } else {
-      const coords = geometry.type === "Polygon"
-        ? geometry.coordinates[0]
-        : geometry.coordinates[0][0];
-
-      const lats = coords.map(c => c[1]);
-      const lngs = coords.map(c => c[0]);
-
-      f.__center = {
-        lat: (Math.min(...lats) + Math.max(...lats)) / 2,
-        lng: (Math.min(...lngs) + Math.max(...lngs)) / 2
-      };
-    }
-
-    return f;
-  });
+// ✅ FIX: consistent ISO everywhere
+function getISO(f) {
+  return f.properties.ISO_A3 !== "-99"
+    ? f.properties.ISO_A3
+    : f.properties.ADM0_A3;
 }
 
-export function initGlobe({
-  container,
-  features,
-  state,
-  onCountryClick,
-  onReset
-}) {
+export function createGlobe(canvas, features, { onClick, onHover }) {
+  const context = canvas.getContext("2d");
+  const tooltip = document.getElementById("tooltip");
 
-  const world = Globe()(container)
-    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-    .showAtmosphere(true)
-    .polygonsData(features)
-    .polygonAltitude(0.01)
+  let width, height, scale;
 
-    .polygonCapColor(d => {
-      const id = d.__id;
+  const starImg = new Image();
+  starImg.src = "https://unpkg.com/three-globe/example/img/night-sky.png";
 
-      // selected country
-      if (id === state.lastClicked?.__id) {
-        return "#00cc66";
+  const projection = d3.geoOrthographic().clipAngle(90);
+  const path = d3.geoPath(projection, context);
+
+  let rotation = [0, -20];
+  let velocity = [0, 0];
+  const friction = 0.92;
+
+  let hovered = null;
+  let isAnimating = false;
+
+  let isDragging = false;
+  let last = null;
+  let dragDistance = 0;
+  const DRAG_THRESHOLD = 5;
+
+  function resize() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+
+    scale = height / 2.2;
+
+    projection
+      .translate([width / 2, height / 2])
+      .scale(scale)
+      .rotate(rotation);
+  }
+
+  function drawStarSky() {
+    if (!starImg.complete) return;
+
+    const imgW = starImg.width;
+    const imgH = starImg.height;
+
+    context.save();
+
+    let offsetX = (rotation[0] * 0.5) % imgW;
+    if (offsetX < 0) offsetX += imgW;
+
+    let offsetY = rotation[1] * 0.3;
+    offsetY = Math.max(-imgH / 3, Math.min(imgH / 3, offsetY));
+
+    context.translate(-offsetX, -offsetY);
+
+    for (let x = -imgW; x < width + imgW; x += imgW) {
+      context.drawImage(starImg, x, -imgH, imgW, height + imgH * 2);
+    }
+
+    context.restore();
+  }
+
+  function getColor(iso) {
+    if (!state.selectedISO) return "#e5e7eb";
+
+    if (iso === state.selectedISO) return "#00cc66";
+
+    const value = state.partners.get(iso);
+    if (!value) return "#e5e7eb";
+
+    const intensity = Math.min(value / 30, 1);
+    const gb = Math.floor(255 * (1 - intensity));
+
+    return `rgb(255, ${gb}, ${gb})`;
+  }
+
+  function drawHoveredCountry(f) {
+    context.save();
+
+    const centroid = d3.geoCentroid(f);
+    const [cx, cy] = projection(centroid);
+
+    context.translate(cx, cy);
+    context.scale(1.08, 1.08);
+    context.translate(-cx, -cy);
+
+    context.shadowBlur = 20;
+    context.shadowColor = "#00cc66";
+
+    context.beginPath();
+    path(f);
+
+    context.fillStyle = "#00cc66";
+    context.fill();
+
+    context.strokeStyle = "#000";
+    context.lineWidth = 1;
+    context.stroke();
+
+    context.restore();
+  }
+
+  function focusCountry(feature) {
+    if (isAnimating) return;
+
+    const [lon, lat] = d3.geoCentroid(feature);
+
+    velocity = [0, 0];
+
+    const target = [-lon, Math.max(-60, Math.min(60, -lat))];
+
+    const start = [...rotation];
+    const startScale = scale;
+    const targetScale = height / 1.8;
+
+    const duration = 800;
+    const startTime = performance.now();
+
+    isAnimating = true;
+
+    function animateFocus(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      const ease = t * (2 - t);
+
+      rotation[0] = start[0] + (target[0] - start[0]) * ease;
+      rotation[1] = start[1] + (target[1] - start[1]) * ease;
+
+      scale = startScale + (targetScale - startScale) * ease;
+
+      projection.rotate(rotation).scale(scale);
+
+      if (t < 1) {
+        requestAnimationFrame(animateFocus);
+      } else {
+        isAnimating = false;
       }
+    }
 
-      const iso = d.properties.ISO_A3 !== "-99" ? d.properties.ISO_A3 : d.properties.ADM0_A3;
+    requestAnimationFrame(animateFocus);
+  }
 
-      // trade partners heat
-      if (state.tradePartners[iso] !== undefined) {
-        const p = state.tradePartners[iso];
-        const intensity = Math.max(0.08, Math.min(1, Math.sqrt(p / 20)));
-        const gb = Math.floor(255 * (1 - intensity));
-        return `rgb(255, ${gb}, ${gb})`;
+  function render() {
+    context.clearRect(0, 0, width, height);
+
+    drawStarSky();
+
+    context.beginPath();
+    path({ type: "Sphere" });
+    context.fillStyle = "#0b1e2d";
+    context.fill();
+
+    for (let f of features) {
+      if (f === hovered) continue;
+
+      context.beginPath();
+      path(f);
+
+      const iso = getISO(f); // ✅ FIX
+      context.fillStyle = getColor(iso);
+
+      context.fill();
+
+      context.strokeStyle = "#111";
+      context.lineWidth = 0.5;
+      context.stroke();
+    }
+
+    if (hovered) drawHoveredCountry(hovered);
+  }
+
+  canvas.addEventListener("mousedown", e => {
+    if (isAnimating) return;
+
+    isDragging = true;
+    last = [e.clientX, e.clientY];
+    dragDistance = 0;
+  });
+
+  window.addEventListener("mouseup", () => {
+    isDragging = false;
+  });
+
+  window.addEventListener("mousemove", e => {
+    if (isAnimating) return;
+
+    const [x, y] = [e.clientX, e.clientY];
+
+    if (isDragging) {
+      const dx = x - last[0];
+      const dy = y - last[1];
+
+      dragDistance += Math.sqrt(dx * dx + dy * dy);
+
+      velocity = [dx * 0.2, -dy * 0.2];
+
+      rotation[0] += velocity[0];
+      rotation[1] += velocity[1];
+      rotation[1] = Math.max(-90, Math.min(90, rotation[1]));
+
+      projection.rotate(rotation);
+      last = [x, y];
+    }
+
+    const [mx, my] = d3.pointer(e, canvas);
+    hovered = null;
+
+    for (let f of features) {
+      context.beginPath();
+      path(f);
+      if (context.isPointInPath(mx, my)) {
+        hovered = f;
+        break;
       }
+    }
 
-      return "#e5e7eb";
-    })
+    if (tooltip) {
+      if (hovered) {
+        tooltip.textContent = hovered.properties.ADMIN || "Unknown";
+        tooltip.style.left = `${x + 12}px`;
+        tooltip.style.top = `${y + 12}px`;
+        tooltip.style.opacity = 1;
+        canvas.style.cursor = "pointer";
+      } else {
+        tooltip.style.opacity = 0;
+        canvas.style.cursor = isDragging ? "grabbing" : "grab";
+      }
+    }
 
-    .polygonSideColor(() => "#888")
-    .polygonStrokeColor(() => "#111")
+    onHover?.(hovered);
+  });
 
-    .polygonLabel(({ properties }) => properties.ADMIN)
+  canvas.addEventListener("wheel", e => {
+    e.preventDefault();
+    scale += e.deltaY * -0.3;
+    scale = Math.max(150, Math.min(800, scale));
+    projection.scale(scale);
+  });
 
-    .onPolygonHover(hoverD => {
-      world.polygonAltitude(d =>
-        d === hoverD || d === state.lastClicked ? 0.02 : 0.01
-      );
-    })
+  canvas.addEventListener("click", e => {
+    if (isAnimating) return;
+    if (dragDistance > DRAG_THRESHOLD) return;
 
-    .onPolygonClick(polygon => {
-      const { lat, lng } = polygon.__center;
+    const [x, y] = d3.pointer(e);
 
-      const controls = world.controls();
-      controls.enabled = false;
+    for (let f of features) {
+      context.beginPath();
+      path(f);
+      if (context.isPointInPath(x, y)) {
+        focusCountry(f);
+        onClick?.(f);
+        if (tooltip) tooltip.style.opacity = 0;
+        break;
+      }
+    }
+  });
 
-      world.pointOfView({ lat, lng, altitude: 1.5 }, 1000);
+  function animate() {
+    if (!isDragging && !isAnimating) {
+      velocity[0] *= friction;
+      velocity[1] *= friction;
 
-      setTimeout(() => {
-        controls.enabled = true;
-      }, 1000);
+      rotation[0] += velocity[0];
+      rotation[1] += velocity[1];
+      rotation[1] = Math.max(-90, Math.min(90, rotation[1]));
 
-      onCountryClick(polygon, world);
-    })
+      projection.rotate(rotation);
+    }
 
-    .onGlobeClick(() => {
-      onReset(world);
-    })
+    render();
+    requestAnimationFrame(animate);
+  }
 
-    .polygonsTransitionDuration(200);
-
-  // globe styling
-  world.globeMaterial().color.set("#0b1e2d");
-  world.globeMaterial().emissive.set("#112244");
-  world.globeMaterial().emissiveIntensity = 0.2;
-
-  world.pointOfView({ altitude: 2.5 });
-
-  const controls = world.controls();
-  controls.minDistance = 120;
-  controls.maxDistance = 400;
-  controls.enableDamping = true;
-
-  return world;
+  window.addEventListener("resize", resize);
+  resize();
+  animate();
 }

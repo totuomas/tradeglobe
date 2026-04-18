@@ -1,116 +1,53 @@
-body {
-    margin: 0;
-    overflow: hidden;
-    font-family: Arial, sans-serif;
-    background: #0b1e2d;
-    color: white;
+html, body {
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+  font-family: sans-serif;
 }
 
-/* 🌍 Globe */
-#globe-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-}
-
-/* 🧭 Header */
+/* Header */
 #header {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 10;
-}
-
-#header h1 {
-    margin: 0;
-    font-size: 22px;
-}
-
-#header p {
-    margin: 4px 0 0;
-    font-size: 14px;
-    opacity: 0.7;
-}
-
-/* 📊 Info Panel */
-#info-panel {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    width: 220px;
-    background: rgba(0,0,0,0.6);
-    padding: 15px;
-    border-radius: 10px;
-    z-index: 10;
-}
-
-#info-panel h2 {
-    margin-top: 0;
-    font-size: 18px;
-}
-
-#partner-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#partner-list li {
-    font-size: 14px;
-    margin: 5px 0;
-}
-
-/* 🎨 Legend */
-#legend {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    z-index: 10;
-}
-
-.gradient {
-    width: 120px;
-    height: 10px;
-    background: linear-gradient(to right, #fff, red);
-    border-radius: 5px;
-}
-
-#mode-toggle {
-  position: absolute;      /* 👈 ADD THIS */
-  top: 70px;               /* adjust as you like */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;             /* 👈 ADD THIS */
-
-  display: flex;
-  gap: 8px;
-}
-
-#mode-toggle button {
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.3);
-  background: transparent;
+  position: absolute;
+  top: 10px;
+  left: 20px;
   color: white;
-  cursor: pointer;
+  z-index: 10;
 }
 
-#mode-toggle button.active {
-  background: #00cc66;
-  color: black;
+/* Tooltip */
+#tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(0,0,0,0.8);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(12px, 12px);
+  transition: opacity 0.15s ease;
 }
 
-.sectors-header {
+/* Status Panel */
+#status-panel {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* pushes toggle to the right */
+  gap: 8px;
+  z-index: 10;
 }
 
-.sectors-header h3 {
-  margin: 0;
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: gray;
 }

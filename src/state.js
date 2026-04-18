@@ -1,9 +1,6 @@
+// state.js
+
 export const state = {
-  apiOnline: false,
-  currentRequest: null,
-  lastClicked: null,
-  tradePartners: {},
-  tradeMode: "exports",
-  sectors: null,
-  showingSectors: false
+  selectedISO: null,
+  partners: new Map(), // ISO -> % trade
 };

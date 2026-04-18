@@ -1,70 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trade Globe</title>
-
-  <link rel="stylesheet" href="style.css">
-  <script src="https://unpkg.com/globe.gl"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>D3 Globe</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- 🌍 Header -->
+  <!-- Header -->
   <div id="header">
-    <h1>Global Trade Explorer</h1>
-    <p>Click a country to see its export partners</p>
+    <h1>Global Globe</h1>
+    <p>Drag • Scroll • Hover</p>
   </div>
 
-  <!-- 🎛️ Controls Panel -->
-  <div id="controls-panel">
-    <h3>Controls</h3>
-
-    <div class="control-item">
-      <button id="sectors-btn">
-        Show sector breakdown
-      </button>
-    </div>
-  </div>
-
-  <!-- 🌐 Globe -->
-  <div id="globe-container"></div>
-
-  <!-- 📊 Info Panel -->
-  <div id="info-panel">
-    <h2 id="country-name">Select a country</h2>
-
-    <div id="partners-card">
-      <h3>Top Trade Partners</h3>
-      <div id="partners-chart"></div>
-    </div>
-
-    <!-- ALWAYS VISIBLE -->
-    <div id="sectors-card" style="margin-top:15px;">
-      <div class="sectors-header">
-        <h3>Sector Breakdown</h3>
-        <label class="switch">
-          <input type="checkbox" id="sectors-toggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div id="sectors-chart"></div>
-    </div>
-  </div>
-
-  <!-- 🎨 Legend -->
-  <div id="legend">
-    <span>0%</span>
-    <div class="gradient"></div>
-    <span>20%+</span>
-  </div>
-
-  <!-- 🔄 Mode toggle -->
-  <div id="mode-toggle">
-    <button id="exports-btn" class="active">Exports</button>
-    <button id="imports-btn">Imports</button>
-  </div>
+  <!-- Canvas -->
+  <canvas id="globe"></canvas>
+  
+  <!-- Tooltip -->
+  <div id="tooltip"></div>
 
   <script type="module" src="script.js"></script>
 </body>

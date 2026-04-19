@@ -18,6 +18,9 @@ export function createControls({
   let last = null;
   let moved = false;
 
+  // ✅ NEW: animation lock
+  let isAnimating = false;
+
   // ✅ GET TOOLTIP ELEMENT
   const tooltip = document.getElementById("tooltip");
 
@@ -25,6 +28,8 @@ export function createControls({
   // MOUSE DOWN
   // =========================
   canvas.addEventListener("mousedown", e => {
+    if (isAnimating) return; // 🚫 block during animation
+
     isDragging = true;
     last = [e.clientX, e.clientY];
     moved = false;
@@ -45,7 +50,7 @@ export function createControls({
     const [x, y] = [e.clientX, e.clientY];
 
     // ===== DRAG ROTATION =====
-    if (isDragging) {
+    if (isDragging && !isAnimating) {
       const dx = x - last[0];
       const dy = y - last[1];
 
@@ -66,34 +71,36 @@ export function createControls({
     }
 
     // ===== HOVER DETECTION =====
-    const [mx, my] = d3.pointer(e, canvas);
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
     hovered = null;
 
     for (let f of features) {
       path.context().beginPath();
       path(f);
-      if (path.context().isPointInPath(mx, my)) {
+
+      if (path.context().isPointInPath(mx * dpr, my * dpr)) {
         hovered = f;
         break;
       }
     }
 
     // ===== TOOLTIP + CURSOR =====
-    if (hovered && !isDragging) {
+    if (hovered && !isDragging && !isAnimating) {
       const name =
         hovered.properties.name ||
         hovered.properties.ADMIN ||
-        hovered.id || // fallback
+        hovered.id ||
         "Unknown";
 
-      // position
       tooltip.style.left = x - 4 + "px";
       tooltip.style.top = y + 4 + "px";
 
-      // content
       tooltip.textContent = name;
-
-      // show
       tooltip.style.opacity = 1;
 
       canvas.style.cursor = "pointer";
@@ -102,14 +109,15 @@ export function createControls({
       canvas.style.cursor = "default";
     }
 
-    // optional external hook
     onHover?.(hovered, e);
   });
 
   // =========================
-  // ZOOM
+  // ZOOM (SCROLL)
   // =========================
   canvas.addEventListener("wheel", e => {
+    if (isAnimating) return; // 🚫 ignore scroll during animation
+
     e.preventDefault();
 
     let scale = projection.scale();
@@ -126,6 +134,7 @@ export function createControls({
   canvas.addEventListener("click", () => {
     if (!hovered) return;
     if (moved) return;
+    if (isAnimating) return;
 
     focusCountry(hovered);
     onClick?.(hovered);
@@ -139,6 +148,9 @@ export function createControls({
   // FOCUS ANIMATION
   // =========================
   function focusCountry(feature) {
+    if (isAnimating) return; // prevent stacking
+    isAnimating = true;
+
     const [lon, lat] = d3.geoCentroid(feature);
 
     const target = [-lon, Math.max(-60, Math.min(60, -lat))];
@@ -161,7 +173,11 @@ export function createControls({
 
       projection.rotate(rotation).scale(scale);
 
-      if (t < 1) requestAnimationFrame(animate);
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        isAnimating = false; // ✅ unlock controls
+      }
     }
 
     requestAnimationFrame(animate);

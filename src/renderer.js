@@ -21,20 +21,16 @@ export function createRenderer({ context, projection, path, features, getISO }) 
     return state.theme.globe;
   }
 
-  function getColor(iso) {
+  function getColor(iso) { 
     const t = theme();
-
-    if (!state.selectedISO) return t.countryDefault;
-    if (iso === state.selectedISO) return t.countrySelected;
-
-    const value = state.partners.get(iso);
-    if (!value) return t.countryDefault;
-
-    const boosted = Math.pow(Math.min(value / 30, 1), 0.6);
-
-    return d3.scaleSequential()
-      .domain([0, 30])
-      .interpolator(t.dataScale)(boosted * 30);
+    if (      !state.selectedISO) return t.countryDefault;
+    if (iso == state.selectedISO) return t.countrySelected;
+    if (iso != state.selectedISO) {
+      const p = state.partners.get(iso);
+      const intensity = Math.max(0.08, Math.min(1, Math.sqrt(p / 20)));
+      const gb = Math.floor(255 * (1 - intensity));
+      return `rgb(255, ${gb}, ${gb})`;
+    }
   }
 
   function drawStars(width, height, rotation) {
@@ -137,7 +133,7 @@ export function createRenderer({ context, projection, path, features, getISO }) 
       context.fill();
 
       context.strokeStyle = t.stroke;
-      context.lineWidth = 0.5;
+      context.lineWidth = 1.0;
       context.stroke();
     }
   }

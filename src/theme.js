@@ -9,10 +9,9 @@ export const themes = {
     globe: {
       sphere: ["#30415d", "#143651", "#030924"],
       atmosphere: ["rgba(0,150,255,0)", "rgba(0,150,255,0.2)", "rgba(0,120,255,0.6)"],
-      countryDefault: "#989898",
+      countryDefault: "#e6e6e6",
       countrySelected: "#00cc66",
-      stroke: "#111",
-      dataScale: d3.interpolateLab("#2b0a0a", "#ff6b6b"),
+      stroke: "#000000",
       stars: BG
     },
 
@@ -23,39 +22,4 @@ export const themes = {
       text: "#ffffff"
     }
   },
-
-  light: {
-    name: "light",
-
-    globe: {
-      // soft daylight earth tones
-      sphere: ["#e2e8f0", "#cbd5f5", "#94a3b8"],
-
-      // subtle atmosphere (much lighter than dark)
-      atmosphere: [
-        "rgba(0,0,0,0)",
-        "rgba(59,130,246,0.08)",
-        "rgba(59,130,246,0.2)"
-      ],
-
-      countryDefault: "#d1d5db",
-      countrySelected: "#2563eb",
-
-      // light background → use white stroke
-      stroke: "#ffffff",
-
-      // nice clean blue gradient for data
-      dataScale: d3.interpolateBlues,
-
-      // no stars in light mode
-      stars: null
-    },
-
-    ui: {
-      background: "#f1f5f9", // soft gray instead of pure white
-      panel: "rgba(255,255,255,0.7)",
-      accent: "#2563eb", // modern blue
-      text: "#0f172a"
-    }
-  }
 };

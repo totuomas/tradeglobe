@@ -19,8 +19,22 @@ export function createGlobe(canvas, features, { onClick, onHover }) {
   let velocity = [0, 0];
 
   function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+
+    // CSS size (what you see)
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
+
+    // Actual pixel resolution (sharpness)
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    // Reset + scale context
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.scale(dpr, dpr);
 
     scale = height / 2.2;
 
